@@ -27,6 +27,10 @@
             {
                 "module": "anytree",
                 "input_file": "wheels/anytree-2.8.0-py2.py3-none-any.whl"
+            },
+            {
+                "module": "six",
+                "input_file": "wheels/six-1.16.0-py2.py3-none-any.whl"
             }
         ]
     },
