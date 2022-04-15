@@ -136,7 +136,10 @@ class PlaybookUtilsConnector(BaseConnector):
             return self._process_empty_response(r, action_result)
 
         # everything else is actually an error at this point
-        message = f"Can't process response from server. Status Code: {r.status_code} Data from server: {r.text.replace(u'{', '{{').replace(u'}', '}}')}"
+        message = (
+            f"Can't process response from server. Status Code: {r.status_code} "
+            f"Data from server: {r.text.replace(u'{', '{{').replace(u'}', '}}')}"
+        )
 
         return RetVal(action_result.set_status(phantom.APP_ERROR, message), None)
 
@@ -179,7 +182,10 @@ class PlaybookUtilsConnector(BaseConnector):
             bool: Action result status
             str: Playbook repo name and playbook name
         """
-        ret_val, app_run_resp = self._make_rest_call(ph_rules.build_phantom_rest_url('app_run', self.get_app_run_id(), 'playbook_run'), action_result)
+        ret_val, app_run_resp = self._make_rest_call(
+            ph_rules.build_phantom_rest_url('app_run', self.get_app_run_id(), 'playbook_run'),
+            action_result
+        )
         if phantom.is_fail(ret_val):
             return RetVal(action_result.get_status(), None)
 
@@ -216,7 +222,10 @@ class PlaybookUtilsConnector(BaseConnector):
 
         if not all(repo_pb_names):
             return RetVal(
-                action_result.set_status(phantom.APP_ERROR, f'Unable to get playbook or repo name for app_run {self.get_app_run_id()}: {repo_pb_names}'),
+                action_result.set_status(
+                    phantom.APP_ERROR,
+                    f'Unable to get playbook or repo name for app_run {self.get_app_run_id()}: {repo_pb_names}'
+                ),
                 repo_pb_names
             )
 
