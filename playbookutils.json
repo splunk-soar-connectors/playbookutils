@@ -10,6 +10,11 @@
     "python_version": "3",
     "product_version_regex": ".*",
     "publisher": "Splunk",
+    "contributors": [
+        {
+            "name": "Brandan Neises",
+        }
+    ],
     "license": "Copyright (c) Splunk, 2021",
     "app_version": "1.0.2",
     "utctime_updated": "2021-03-16T15:31:00.718730Z",
