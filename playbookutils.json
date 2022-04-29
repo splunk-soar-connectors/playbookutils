@@ -79,11 +79,12 @@
             "action": "get playbook tree",
             "identifier": "get_playbook_tree",
             "description": "Get details about the parent/child relationships of playbooks and actions",
+            "verbose": "Note: If the playbook_run_id parameter is not provided, it will attempt to asertain the playbook run that is calling the current app run. If the action was not provied with a playbook_run_id and was called outside of a playbook, an error status will be returned.",
             "type": "generic",
             "read_only": true,
             "parameters": {
                 "playbook_run_id": {
-                    "description": "Playbook run ID of a playbook in the tree that is to be retrieved (Default to current PB run if not provided)",
+                    "description": "Playbook run ID of any playbook run in the tree that is to be retrieved (If not provided and was called from a playbook, this defaults to the current playbook run id that initiated this app run)",
                     "data_type": "numeric",
                     "order": 0
                 },
