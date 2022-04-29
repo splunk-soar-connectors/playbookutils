@@ -185,8 +185,8 @@ class PlaybookUtilsConnector(BaseConnector):
         return self._process_response(r, action_result)
 
     def _determine_pb_run_id(self, action_result):
-        """ Figure out what the current playbook run id is by using the app_run_id, if it is running in a playbook. The current playbook 
-        run is the playbook run calling this specific instance of the current app run. If there is no associated playbook run, this will 
+        """ Figure out what the current playbook run id is by using the app_run_id, if it is running in a playbook. The current playbook
+        run is the playbook run calling this specific instance of the current app run. If there is no associated playbook run, this will
         return an action_result error status.
 
         Args:
