@@ -513,10 +513,10 @@ class PlaybookUtilsConnector(BaseConnector):
             'get_playbook_tree': self._handle_get_playbook_tree
         }
 
-        if action_id in action_map:
-            return action_map[action_id](param)
-        else:
+        if action_id not in action_map:
             return self.set_status(phantom.APP_ERROR, 'Action identifier is not available.')
+
+        return action_map[action_id](param)
 
     def initialize(self):
         # Load the state in initialize, use it to store data
