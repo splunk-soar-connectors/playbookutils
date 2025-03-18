@@ -1,6 +1,6 @@
 # File: playbookutils_connector.py
 #
-# Copyright (c) 2022 Splunk Inc.
+# Copyright (c) 2022-2025 Splunk Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -27,7 +27,6 @@ from phantom.base_connector import BaseConnector
 
 class Run(NodeMixin):
     def __init__(self, run_details, parent=None, children=None):
-
         self.run_details = run_details
 
         self.parent = parent
@@ -37,40 +36,35 @@ class Run(NodeMixin):
 
 class PlaybookRun(Run):
     def __init__(self, run_details, parent=None, children=None):
+        self.type = "playbook"
 
-        self.type = 'playbook'
+        self.run_id = run_details["id"]
+        self.name = run_details["_pretty_playbook"]
 
-        self.run_id = run_details['id']
-        self.name = run_details['_pretty_playbook']
-
-        super(PlaybookRun, self).__init__(run_details, parent, children)
+        super().__init__(run_details, parent, children)
 
 
 class AppRun(Run):
     def __init__(self, run_details, parent=None, children=None):
+        self.type = "app"
 
-        self.type = 'app'
+        self.run_id = run_details["id"]
+        self.name = run_details["action"]
+        self.action = run_details["_pretty_action_run"]
+        self.status = run_details["status"]
 
-        self.run_id = run_details['id']
-        self.name = run_details['action']
-        self.action = run_details['_pretty_action_run']
-        self.status = run_details['status']
-
-        super(AppRun, self).__init__(run_details, parent, children)
+        super().__init__(run_details, parent, children)
 
 
 class RetVal(tuple):
-
     def __new__(cls, val1, val2=None):
         return tuple.__new__(RetVal, (val1, val2))
 
 
 class PlaybookUtilsConnector(BaseConnector):
-
     def __init__(self):
-
         # Call the BaseConnectors init first
-        super(PlaybookUtilsConnector, self).__init__()
+        super().__init__()
 
         self._state = None
 
@@ -78,11 +72,7 @@ class PlaybookUtilsConnector(BaseConnector):
         if response.status_code == 200:
             return RetVal(phantom.APP_SUCCESS, {})
 
-        return RetVal(
-            action_result.set_status(
-                phantom.APP_ERROR, "Empty response and no information in the header"
-            ), None
-        )
+        return RetVal(action_result.set_status(phantom.APP_ERROR, "Empty response and no information in the header"), None)
 
     def _process_html_response(self, response, action_result):
         # An html response, treat it like an error
@@ -91,15 +81,15 @@ class PlaybookUtilsConnector(BaseConnector):
         try:
             soup = BeautifulSoup(response.text, "html.parser")
             error_text = soup.text
-            split_lines = error_text.split('\n')
+            split_lines = error_text.split("\n")
             split_lines = [x.strip() for x in split_lines if x.strip()]
-            error_text = '\n'.join(split_lines)
+            error_text = "\n".join(split_lines)
         except:
-            error_text = 'Cannot parse error details'
+            error_text = "Cannot parse error details"
 
-        message = f'Status Code: {status_code}. Data from server:\n{error_text}\n'
+        message = f"Status Code: {status_code}. Data from server:\n{error_text}\n"
 
-        message = message.replace(u'{', '{{').replace(u'}', '}}')
+        message = message.replace("{", "{{").replace("}", "}}")
         return RetVal(action_result.set_status(phantom.APP_ERROR, message), None)
 
     def _process_json_response(self, r, action_result):
@@ -107,39 +97,35 @@ class PlaybookUtilsConnector(BaseConnector):
         try:
             resp_json = r.json()
         except Exception as e:
-            return RetVal(
-                action_result.set_status(
-                    phantom.APP_ERROR, f'Unable to parse JSON response. Error: {e}'
-                ), None
-            )
+            return RetVal(action_result.set_status(phantom.APP_ERROR, f"Unable to parse JSON response. Error: {e}"), None)
 
         # Please specify the status codes here
         if 200 <= r.status_code < 399:
             return RetVal(phantom.APP_SUCCESS, resp_json)
 
         # You should process the error returned in the json
-        message = f'Error from server. Status Code: {r.status_code} Data from server: {r.text.replace(u"{", "{{").replace(u"}", "}}")}'
+        message = f"Error from server. Status Code: {r.status_code} Data from server: {r.text.replace('{', '{{').replace('}', '}}')}"
 
         return RetVal(action_result.set_status(phantom.APP_ERROR, message), None)
 
     def _process_response(self, r, action_result):
         # store the r_text in debug data, it will get dumped in the logs if the action fails
-        if hasattr(action_result, 'add_debug_data'):
-            action_result.add_debug_data({'r_status_code': r.status_code})
-            action_result.add_debug_data({'r_text': r.text})
-            action_result.add_debug_data({'r_headers': r.headers})
+        if hasattr(action_result, "add_debug_data"):
+            action_result.add_debug_data({"r_status_code": r.status_code})
+            action_result.add_debug_data({"r_text": r.text})
+            action_result.add_debug_data({"r_headers": r.headers})
 
         # Process each 'Content-Type' of response separately
 
         # Process a json response
-        if 'json' in r.headers.get('Content-Type', ''):
+        if "json" in r.headers.get("Content-Type", ""):
             return self._process_json_response(r, action_result)
 
         # Process an HTML response, Do this no matter what the api talks.
         # There is a high chance of a PROXY in between phantom and the rest of
         # world, in case of errors, PROXY's return HTML, this function parses
         # the error and adds it to the action_result.
-        if 'html' in r.headers.get('Content-Type', ''):
+        if "html" in r.headers.get("Content-Type", ""):
             return self._process_html_response(r, action_result)
 
         # it's not content-type that is to be parsed, handle an empty response
@@ -148,8 +134,7 @@ class PlaybookUtilsConnector(BaseConnector):
 
         # everything else is actually an error at this point
         message = (
-            f"Can't process response from server. Status Code: {r.status_code} "
-            f"Data from server: {r.text.replace(u'{', '{{').replace(u'}', '}}')}"
+            f"Can't process response from server. Status Code: {r.status_code} Data from server: {r.text.replace('{', '{{').replace('}', '}}')}"
         )
 
         return RetVal(action_result.set_status(phantom.APP_ERROR, message), None)
@@ -164,28 +149,17 @@ class PlaybookUtilsConnector(BaseConnector):
         try:
             request_func = getattr(ph_rules.requests, method)
         except AttributeError:
-            return RetVal(
-                action_result.set_status(phantom.APP_ERROR, f'Invalid method: {method}'),
-                resp_json
-            )
+            return RetVal(action_result.set_status(phantom.APP_ERROR, f"Invalid method: {method}"), resp_json)
 
         try:
-            r = request_func(
-                url,
-                verify=config.get('verify_server_cert', False),
-                timeout=30,
-                **kwargs
-            )
+            r = request_func(url, verify=config.get("verify_server_cert", False), timeout=30, **kwargs)
         except Exception as e:
-            return RetVal(
-                action_result.set_status(phantom.APP_ERROR, f'Error Connecting to server. Details: {e}'),
-                resp_json
-            )
+            return RetVal(action_result.set_status(phantom.APP_ERROR, f"Error Connecting to server. Details: {e}"), resp_json)
 
         return self._process_response(r, action_result)
 
     def _determine_pb_run_id(self, action_result):
-        """ Figure out what the current playbook run id is by using the app_run_id, if it is running in a playbook. The current playbook
+        """Figure out what the current playbook run id is by using the app_run_id, if it is running in a playbook. The current playbook
         run is the playbook run calling this specific instance of the current app run. If there is no associated playbook run, this will
         return an action_result error status.
 
@@ -197,23 +171,21 @@ class PlaybookUtilsConnector(BaseConnector):
             str: Playbook repo name and playbook name
         """
         ret_val, app_run_resp = self._make_rest_call(
-            ph_rules.build_phantom_rest_url('app_run', self.get_app_run_id(), 'playbook_run'),
-            action_result
+            ph_rules.build_phantom_rest_url("app_run", self.get_app_run_id(), "playbook_run"), action_result
         )
         if phantom.is_fail(ret_val):
             return RetVal(action_result.get_status(), None)
 
-        pb_run_id = app_run_resp.get('playbook_run')
+        pb_run_id = app_run_resp.get("playbook_run")
         if not pb_run_id:
             return RetVal(
-                action_result.set_status(phantom.APP_ERROR, f'No playbook_run associated with this app_run: {self.get_app_run_id()}'),
-                None
+                action_result.set_status(phantom.APP_ERROR, f"No playbook_run associated with this app_run: {self.get_app_run_id()}"), None
             )
 
         return RetVal(phantom.APP_SUCCESS, pb_run_id)
 
     def _determine_pb_and_repo_names(self, action_result):
-        """ Figure out what the current repo and playbook names by using the app_run_id, if it is running in a playbook.
+        """Figure out what the current repo and playbook names by using the app_run_id, if it is running in a playbook.
 
         Args:
             action_result (ActionResult): Action result
@@ -228,25 +200,24 @@ class PlaybookUtilsConnector(BaseConnector):
             return RetVal(action_result.get_status(), (None, None))
 
         # Get playbook run details
-        ret_val, pb_run_resp = self._make_rest_call(ph_rules.build_phantom_rest_url('playbook_run', pb_run_id), action_result, params={'pretty'})
+        ret_val, pb_run_resp = self._make_rest_call(ph_rules.build_phantom_rest_url("playbook_run", pb_run_id), action_result, params={"pretty"})
         if phantom.is_fail(ret_val):
             return RetVal(action_result.get_status(), (None, None))
 
-        repo_pb_names = (pb_run_resp.get('_pretty_scm_name'), pb_run_resp.get('_pretty_playbook'))
+        repo_pb_names = (pb_run_resp.get("_pretty_scm_name"), pb_run_resp.get("_pretty_playbook"))
 
         if not all(repo_pb_names):
             return RetVal(
                 action_result.set_status(
-                    phantom.APP_ERROR,
-                    f'Unable to get playbook or repo name for app_run {self.get_app_run_id()}: {repo_pb_names}'
+                    phantom.APP_ERROR, f"Unable to get playbook or repo name for app_run {self.get_app_run_id()}: {repo_pb_names}"
                 ),
-                repo_pb_names
+                repo_pb_names,
             )
 
         return RetVal(phantom.APP_SUCCESS, repo_pb_names)
 
     def _attach_pb_runs(self, action_result, pb_run, include_app_runs):
-        """ Attach playbook runs to the playbook.
+        """Attach playbook runs to the playbook.
 
         Args:
             action_result (ActionResult): Action result
@@ -255,21 +226,12 @@ class PlaybookUtilsConnector(BaseConnector):
         Returns:
             bool: Action result status
         """
-        params = {
-            'pretty': True,
-            '_filter_parent_run': pb_run.run_id,
-            'page_size': 0,
-            'sort': 'id'
-        }
-        ret_val, child_pb_runs = self._make_rest_call(
-            ph_rules.build_phantom_rest_url('playbook_run'),
-            action_result,
-            params=params
-        )
+        params = {"pretty": True, "_filter_parent_run": pb_run.run_id, "page_size": 0, "sort": "id"}
+        ret_val, child_pb_runs = self._make_rest_call(ph_rules.build_phantom_rest_url("playbook_run"), action_result, params=params)
         if phantom.is_fail(ret_val):
             return action_result.get_status()
 
-        for child_pb_run_details in child_pb_runs.get('data', []):
+        for child_pb_run_details in child_pb_runs.get("data", []):
             child_pb_run = PlaybookRun(child_pb_run_details, pb_run)
             ret_val = self._attach_descendants(action_result, child_pb_run, include_app_runs)
             if phantom.is_fail(ret_val):
@@ -278,7 +240,7 @@ class PlaybookUtilsConnector(BaseConnector):
         return phantom.APP_SUCCESS
 
     def _attach_app_runs(self, action_result, pb_run):
-        """ Attach app runs to a playbook as descendants
+        """Attach app runs to a playbook as descendants
 
         Args:
             action_result (ActionResult): Action result
@@ -287,22 +249,13 @@ class PlaybookUtilsConnector(BaseConnector):
         Returns:
             bool: Action result status
         """
-        params = {
-            'pretty': True,
-            '_filter_playbook_run': pb_run.run_id,
-            'page_size': 0,
-            'sort': 'id'
-        }
-        ret_val, app_runs = self._make_rest_call(
-            ph_rules.build_phantom_rest_url('app_run'),
-            action_result,
-            params=params
-        )
+        params = {"pretty": True, "_filter_playbook_run": pb_run.run_id, "page_size": 0, "sort": "id"}
+        ret_val, app_runs = self._make_rest_call(ph_rules.build_phantom_rest_url("app_run"), action_result, params=params)
         if phantom.is_fail(ret_val):
             return action_result.get_status()
 
-        for app_run in app_runs.get('data', []):
-            if app_run.get('id'):
+        for app_run in app_runs.get("data", []):
+            if app_run.get("id"):
                 # ret_val, app_run_details = self._get_app_run(action_result, app_run['id'])
                 # if phantom.is_fail(ret_val):
                 #     self.debug_print(f'Error getting details about app_run: {app_run["id"]}')
@@ -316,7 +269,7 @@ class PlaybookUtilsConnector(BaseConnector):
         return phantom.APP_SUCCESS
 
     def _attach_descendants(self, action_result, parent_pb_run, include_app_runs):
-        """ Attach app runs or child playbooks to another playbook
+        """Attach app runs or child playbooks to another playbook
 
         Args:
             action_result (ActionResult): Action result
@@ -338,7 +291,7 @@ class PlaybookUtilsConnector(BaseConnector):
         return phantom.APP_SUCCESS
 
     def _get_app_run(self, action_result, app_run_id):
-        """ Get app run information
+        """Get app run information
 
         Args:
             action_result (ActionResult): Action result
@@ -349,15 +302,15 @@ class PlaybookUtilsConnector(BaseConnector):
                 bool: ActionResult status
                 dict: Phantom app run details
         """
-        params = {'pretty': True}
-        ret_val, app_run = self._make_rest_call(ph_rules.build_phantom_rest_url('app_run', app_run_id), action_result, params=params)
+        params = {"pretty": True}
+        ret_val, app_run = self._make_rest_call(ph_rules.build_phantom_rest_url("app_run", app_run_id), action_result, params=params)
         if phantom.is_fail(ret_val):
             return RetVal(action_result.get_status(), {})
 
         return RetVal(phantom.APP_SUCCESS, app_run)
 
     def _get_pb_run(self, action_result, pb_run_id):
-        """ Get playbook run information
+        """Get playbook run information
 
         Args:
             action_result (ActionResult): Action result
@@ -370,9 +323,7 @@ class PlaybookUtilsConnector(BaseConnector):
         """
 
         ret_val, pb_run_resp = self._make_rest_call(
-            ph_rules.build_phantom_rest_url('playbook_run', pb_run_id),
-            action_result,
-            params={'pretty': True}
+            ph_rules.build_phantom_rest_url("playbook_run", pb_run_id), action_result, params={"pretty": True}
         )
         if phantom.is_fail(ret_val):
             return RetVal(action_result.get_status(), None)
@@ -380,7 +331,7 @@ class PlaybookUtilsConnector(BaseConnector):
         return RetVal(phantom.APP_SUCCESS, pb_run_resp)
 
     def _get_run_tree(self, action_result, pb_run_id, include_app_runs=True):
-        """ Get the root playbook and attach the descendants
+        """Get the root playbook and attach the descendants
 
         Args:
             action_result (ActionResult): Action result
@@ -398,14 +349,14 @@ class PlaybookUtilsConnector(BaseConnector):
         # Limit runs during development to 25
         for x in range(25, -1, -1):
             if x == 0:
-                message = 'Loop limit reached when trying to get to root pb'
+                message = "Loop limit reached when trying to get to root pb"
                 return RetVal(action_result.set_status(phantom.APP_ERROR, message), None)
 
             ret_val, pb_run = self._get_pb_run(action_result, pb_run_id)
             if phantom.is_fail(ret_val):
                 return RetVal(action_result.get_status(), None)
 
-            parent_run = pb_run.get('parent_run')
+            parent_run = pb_run.get("parent_run")
             if parent_run:
                 pb_run_id = parent_run
             else:
@@ -413,7 +364,7 @@ class PlaybookUtilsConnector(BaseConnector):
                 break
 
         if not root_pb_run:
-            message = 'Unable to get the root Playbook run'
+            message = "Unable to get the root Playbook run"
             return RetVal(action_result.set_status(phantom.APP_ERROR, message), None)
 
         ret_val = self._attach_descendants(action_result, root_pb_run, include_app_runs)
@@ -433,10 +384,7 @@ class PlaybookUtilsConnector(BaseConnector):
 
         self.save_progress("Connecting to endpoint")
         # make rest call
-        ret_val, response = self._make_rest_call(
-            ph_rules.build_phantom_rest_url('version'),
-            action_result
-        )
+        ret_val, response = self._make_rest_call(ph_rules.build_phantom_rest_url("version"), action_result)
 
         if phantom.is_fail(ret_val):
             # the call to the 3rd party device or service failed, action result should contain all the error details
@@ -449,13 +397,13 @@ class PlaybookUtilsConnector(BaseConnector):
         return action_result.set_status(phantom.APP_SUCCESS)
 
     def _handle_get_playbook_tree(self, param):
-        self.save_progress(f'In action handler for: {self.get_action_identifier()}')
+        self.save_progress(f"In action handler for: {self.get_action_identifier()}")
 
         # Add an action result object to self (BaseConnector) to represent the action for this param
         action_result = self.add_action_result(ActionResult(dict(param)))
 
-        pb_run_id = param.get('playbook_run_id')
-        include_app_runs = param.get('include_app_runs', True)
+        pb_run_id = param.get("playbook_run_id")
+        include_app_runs = param.get("include_app_runs", True)
 
         # If it isn't provided, use the current app_run to get the PB Run ID
         if not pb_run_id:
@@ -475,48 +423,45 @@ class PlaybookUtilsConnector(BaseConnector):
         app_run_ids = []
         for pre, fill, node in RenderTree(run_tree):
             # Replace space with a figure space to not get chopped down in action_results UI
-            pre = pre.replace(' ', '\u2007')
-            fill = fill.replace(' ', '\u2007')
+            pre = pre.replace(" ", "\u2007")
+            fill = fill.replace(" ", "\u2007")
 
             # Add each node into data
             data = exporter.export(node)
-            data['tree_prefix'] = pre
-            data['tree_fill'] = fill
-            if 'children' in data:
-                del data['children']
+            data["tree_prefix"] = pre
+            data["tree_fill"] = fill
+            if "children" in data:
+                del data["children"]
             action_result.add_data(data)
 
             # Create text representation of tree view
-            if node.type == 'app':
-                rendered_tree_list.append(f'{pre}<{node.type}-{node.run_id}> {node.action} [{node.status}]')
+            if node.type == "app":
+                rendered_tree_list.append(f"{pre}<{node.type}-{node.run_id}> {node.action} [{node.status}]")
                 app_run_ids.append(node.run_id)
             else:
-                rendered_tree_list.append(f'{pre}<{node.type}-{node.run_id}> {node.name}')
+                rendered_tree_list.append(f"{pre}<{node.type}-{node.run_id}> {node.name}")
                 pb_run_ids.append(node.run_id)
 
-        summary['rendered_playbook_tree'] = rendered_tree_list
-        summary['playbook_run_ids'] = sorted(pb_run_ids)
+        summary["rendered_playbook_tree"] = rendered_tree_list
+        summary["playbook_run_ids"] = sorted(pb_run_ids)
 
-        app_run_message = ''
+        app_run_message = ""
         if include_app_runs:
-            summary['app_run_ids'] = sorted(app_run_ids)
-            app_run_message = f' and {len(app_run_ids)} app run(s)'
+            summary["app_run_ids"] = sorted(app_run_ids)
+            app_run_message = f" and {len(app_run_ids)} app run(s)"
 
-        return action_result.set_status(phantom.APP_SUCCESS, f'Found {len(pb_run_ids)} playbook run(s){app_run_message}.')
+        return action_result.set_status(phantom.APP_SUCCESS, f"Found {len(pb_run_ids)} playbook run(s){app_run_message}.")
 
     def handle_action(self, param):
         # Get the action that we are supposed to execute for this App Run
         action_id = self.get_action_identifier()
 
-        self.debug_print('action_id', action_id)
+        self.debug_print("action_id", action_id)
 
-        action_map = {
-            'test_connectivity': self._handle_test_connectivity,
-            'get_playbook_tree': self._handle_get_playbook_tree
-        }
+        action_map = {"test_connectivity": self._handle_test_connectivity, "get_playbook_tree": self._handle_get_playbook_tree}
 
         if action_id not in action_map:
-            return self.set_status(phantom.APP_ERROR, 'Action identifier is not available.')
+            return self.set_status(phantom.APP_ERROR, "Action identifier is not available.")
 
         return action_map[action_id](param)
 
@@ -537,7 +482,7 @@ class PlaybookUtilsConnector(BaseConnector):
         optional_config_name = config.get('optional_config_name')
         """
 
-        self._base_url = config.get('base_url')
+        self._base_url = config.get("base_url")
 
         return phantom.APP_SUCCESS
 
@@ -557,10 +502,10 @@ def main():
 
     argparser = argparse.ArgumentParser()
 
-    argparser.add_argument('input_test_json', help='Input Test JSON file')
-    argparser.add_argument('-u', '--username', help='username', required=False)
-    argparser.add_argument('-p', '--password', help='password', required=False)
-    argparser.add_argument('-v', '--verify', action='store_true', help='verify', required=False, default=False)
+    argparser.add_argument("input_test_json", help="Input Test JSON file")
+    argparser.add_argument("-u", "--username", help="username", required=False)
+    argparser.add_argument("-p", "--password", help="password", required=False)
+    argparser.add_argument("-v", "--verify", action="store_true", help="verify", required=False, default=False)
 
     args = argparser.parse_args()
     session_id = None
@@ -570,31 +515,31 @@ def main():
     verify = args.verify
 
     if username is not None and password is None:
-
         # User specified a username but not a password, so ask
         import getpass
+
         password = getpass.getpass("Password: ")
 
     if username and password:
         try:
-            login_url = PlaybookUtilsConnector._get_phantom_base_url() + '/login'
+            login_url = PlaybookUtilsConnector._get_phantom_base_url() + "/login"
 
             print("Accessing the Login page")
             r = requests.get(login_url, verify=verify, timeout=30)
-            csrftoken = r.cookies['csrftoken']
+            csrftoken = r.cookies["csrftoken"]
 
             data = dict()
-            data['username'] = username
-            data['password'] = password
-            data['csrfmiddlewaretoken'] = csrftoken
+            data["username"] = username
+            data["password"] = password
+            data["csrfmiddlewaretoken"] = csrftoken
 
             headers = dict()
-            headers['Cookie'] = 'csrftoken=' + csrftoken
-            headers['Referer'] = login_url
+            headers["Cookie"] = "csrftoken=" + csrftoken
+            headers["Referer"] = login_url
 
             print("Logging into Platform to get the session id")
             r2 = requests.post(login_url, verify=verify, data=data, headers=headers, timeout=30)
-            session_id = r2.cookies['sessionid']
+            session_id = r2.cookies["sessionid"]
         except Exception as e:
             print("Unable to get session id from the platform. Error: " + str(e))
             sys.exit(1)
@@ -608,8 +553,8 @@ def main():
         connector.print_progress_message = True
 
         if session_id is not None:
-            in_json['user_session_token'] = session_id
-            connector._set_csrf_info(csrftoken, headers['Referer'])
+            in_json["user_session_token"] = session_id
+            connector._set_csrf_info(csrftoken, headers["Referer"])
 
         ret_val = connector._handle_action(json.dumps(in_json), None)
         print(json.dumps(json.loads(ret_val), indent=4))
@@ -617,5 +562,5 @@ def main():
     sys.exit(0)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
