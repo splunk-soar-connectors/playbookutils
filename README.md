@@ -1,7 +1,7 @@
 # Playbook Utils
 
 Publisher: Splunk Community \
-Connector Version: 1.1.0 \
+Connector Version: 1.1.1 \
 Product Vendor: Splunk \
 Product Name: SOAR \
 Minimum Product Version: 5.2.0
