@@ -15,7 +15,7 @@
             "name": "Brandan Neises"
         }
     ],
-    "license": "Copyright (c) 2022-2025 Splunk Inc.",
+    "license": "Copyright (c) 2022-2026 Splunk Inc.",
     "app_version": "1.1.1",
     "utctime_updated": "2025-04-29T22:40:17.276539Z",
     "package_name": "phantom_playbookutils",

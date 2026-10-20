@@ -1,4 +1,4 @@
-{% extends 'widgets/widget_template.html' %}
+{% extends "widgets/widget_template.html" %}
 {% load custom_template %}
 {% block custom_title_prop %}
   {% if title_logo %}
@@ -11,7 +11,7 @@
 {% block widget_content %}
   <!-- Main Start Block -->
   <!--File: playbookutils_tree.html
-Copyright (c) 2022-2025 Splunk Inc.
+Copyright (c) 2022-2026 Splunk Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -68,7 +68,7 @@ and limitations under the License.
         <h4>No data found</h4>
       {% else %}
         <!-- This is an un-colorized version that uses the summary -->
-        <!-- {% for node in result.summary.rendered_playbook_tree %}{{ node }}<br>{% endfor %} -->
+        {# {% for node in result.summary.rendered_playbook_tree %}{{ node }}<br>{% endfor %} #}
         <!-- This adds color and custom formatting to the view -->
         {% for node in result.data %}
           <div class="node">

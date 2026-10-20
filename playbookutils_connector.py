@@ -1,6 +1,6 @@
 # File: playbookutils_connector.py
 #
-# Copyright (c) 2022-2025 Splunk Inc.
+# Copyright (c) 2022-2026 Splunk Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -384,7 +384,7 @@ class PlaybookUtilsConnector(BaseConnector):
 
         self.save_progress("Connecting to endpoint")
         # make rest call
-        ret_val, response = self._make_rest_call(ph_rules.build_phantom_rest_url("version"), action_result)
+        ret_val, _response = self._make_rest_call(ph_rules.build_phantom_rest_url("version"), action_result)
 
         if phantom.is_fail(ret_val):
             # the call to the 3rd party device or service failed, action result should contain all the error details

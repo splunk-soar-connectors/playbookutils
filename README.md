@@ -1,23 +1,23 @@
 # Playbook Utils
 
-Publisher: Splunk Community \
-Connector Version: 1.1.1 \
-Product Vendor: Splunk \
-Product Name: SOAR \
+Publisher: Splunk Community <br>
+Connector Version: 1.1.1 <br>
+Product Vendor: Splunk <br>
+Product Name: SOAR <br>
 Minimum Product Version: 5.2.0
 
 This app provides utilities to interact with or get information about SOAR playbooks
 
 ### Supported Actions
 
-[test connectivity](#action-test-connectivity) - Validate the asset configuration for connectivity using supplied configuration \
+[test connectivity](#action-test-connectivity) - Validate the asset configuration for connectivity using supplied configuration <br>
 [get playbook tree](#action-get-playbook-tree) - Get details about the parent/child relationships of playbooks and actions
 
 ## action: 'test connectivity'
 
 Validate the asset configuration for connectivity using supplied configuration
 
-Type: **test** \
+Type: **test** <br>
 Read only: **True**
 
 #### Action Parameters
@@ -32,7 +32,7 @@ No Output
 
 Get details about the parent/child relationships of playbooks and actions
 
-Type: **generic** \
+Type: **generic** <br>
 Read only: **True**
 
 Note: If the playbook_run_id parameter is not provided, it will attempt to asertain the playbook run that is calling the current app run. If the action was not provied with a playbook_run_id and was called outside of a playbook, an error status will be returned.
@@ -120,7 +120,7 @@ ______________________________________________________________________
 
 Auto-generated Splunk SOAR Connector documentation.
 
-Copyright 2025 Splunk Inc.
+Copyright 2026 Splunk Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
